@@ -6,7 +6,9 @@ import {
   StyleSheet,
   TextInputProps,
   Platform,
+  TouchableOpacity,
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { theme } from '../../theme';
 
 export interface InputProps extends TextInputProps {
@@ -23,12 +25,14 @@ export const Input = ({
   leftIcon,
   rightIcon,
   isDark = false,
+  secureTextEntry,
   style,
   onFocus,
   onBlur,
   ...props
 }: InputProps) => {
   const [isFocused, setIsFocused] = useState(false);
+  const [isPasswordVisible, setIsPasswordVisible] = useState(false);
   const colors = isDark ? theme.colors.dark : theme.colors.light;
 
   const handleFocus = (e: any) => {
@@ -46,6 +50,9 @@ export const Input = ({
     if (isFocused) return colors.primary;
     return colors.border;
   };
+
+  const isPasswordField = secureTextEntry !== undefined;
+  const effectiveSecureTextEntry = isPasswordField ? (!isPasswordVisible ? true : false) : false;
 
   return (
     <View style={styles.container}>
@@ -71,11 +78,27 @@ export const Input = ({
             style,
           ]}
           placeholderTextColor={colors.textTertiary}
+          secureTextEntry={effectiveSecureTextEntry}
           onFocus={handleFocus}
           onBlur={handleBlur}
           {...props}
         />
-        {rightIcon && <View style={styles.rightIcon}>{rightIcon}</View>}
+        {rightIcon ? (
+          <View style={styles.rightIcon}>{rightIcon}</View>
+        ) : isPasswordField ? (
+          <TouchableOpacity 
+            style={styles.eyeBtn}
+            onPress={() => setIsPasswordVisible(!isPasswordVisible)}
+            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+            activeOpacity={0.6}
+          >
+            <Ionicons 
+              name={isPasswordVisible ? "eye-off-outline" : "eye-outline"} 
+              size={20} 
+              color={colors.textSecondary} 
+            />
+          </TouchableOpacity>
+        ) : null}
       </View>
       {error && (
         <Text style={[styles.error, { color: colors.error }]}>{error}</Text>
@@ -92,6 +115,7 @@ const styles = StyleSheet.create({
     fontSize: theme.typography.size.sm,
     fontFamily: theme.typography.fontFamily.medium,
     marginBottom: theme.spacing.xs,
+    includeFontPadding: false,
   },
   inputContainer: {
     flexDirection: 'row',
@@ -107,6 +131,7 @@ const styles = StyleSheet.create({
     fontFamily: theme.typography.fontFamily.regular,
     paddingVertical: Platform.OS === 'ios' ? theme.spacing.sm : 0,
     minHeight: 52,
+    includeFontPadding: false,
   },
   leftIcon: {
     marginRight: theme.spacing.sm,
@@ -114,9 +139,16 @@ const styles = StyleSheet.create({
   rightIcon: {
     marginLeft: theme.spacing.sm,
   },
+  eyeBtn: {
+    padding: 6,
+    marginLeft: theme.spacing.xs,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   error: {
     fontSize: theme.typography.size.xs,
     fontFamily: theme.typography.fontFamily.regular,
     marginTop: theme.spacing.xs,
+    includeFontPadding: false,
   },
 });

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Image } from 'react-native';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Button } from '../../src/components/ui/Button';
 import { Input } from '../../src/components/ui/Input';
 import { useAppStore } from '../../src/store/useAppStore';
@@ -26,10 +26,11 @@ const registerSchema = z.object({
 type RegisterFormData = z.infer<typeof registerSchema>;
 
 export default function RegisterScreen() {
-  const setIsAuthenticated = useAppStore((state) => state.setIsAuthenticated);
+  const { setIsAuthenticated, setUserInfo } = useAppStore();
   const router = useRouter();
   const isDark = useAppColorScheme();
   const colors = isDark ? theme.colors.dark : theme.colors.light;
+  const insets = useSafeAreaInsets();
 
   const [isLoading, setIsLoading] = useState(false);
 
@@ -40,22 +41,26 @@ export default function RegisterScreen() {
 
   const handleRegister = async (data: RegisterFormData) => {
     setIsLoading(true);
-    // Simulate network request
-    await new Promise(resolve => setTimeout(resolve, 800));
+    await new Promise(resolve => setTimeout(resolve, 600));
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    setUserInfo(data.name.trim(), data.email.trim());
     setIsAuthenticated(true);
     router.replace('/(tabs)');
   };
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
-      <ScrollView contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={['top', 'bottom']}>
+      <ScrollView 
+        contentContainerStyle={[styles.scrollContent, { paddingBottom: Math.max(insets.bottom + 16, 24) }]} 
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
+      >
         <View style={styles.header}>
-          <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
+          <TouchableOpacity style={styles.backButton} onPress={() => router.back()} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
             <Ionicons name="arrow-back" size={24} color={colors.text} />
           </TouchableOpacity>
-          <Text style={[styles.title, { color: colors.text }]}>Create account</Text>
-          <Text style={[styles.subtitle, { color: colors.textSecondary }]}>Let's get you started</Text>
+          <Text style={[styles.title, { color: colors.text }]}>Create Account</Text>
+          <Text style={[styles.subtitle, { color: colors.textSecondary }]}>Join LifeSync and achieve your daily goals</Text>
         </View>
 
         <View style={styles.form}>
@@ -65,7 +70,7 @@ export default function RegisterScreen() {
             render={({ field: { onChange, onBlur, value } }) => (
               <Input
                 label="Full Name"
-                placeholder="John Doe"
+                placeholder="Enter your name"
                 onBlur={onBlur}
                 onChangeText={onChange}
                 value={value}
@@ -81,7 +86,7 @@ export default function RegisterScreen() {
             render={({ field: { onChange, onBlur, value } }) => (
               <Input
                 label="Email"
-                placeholder="john@example.com"
+                placeholder="Enter your email"
                 autoCapitalize="none"
                 keyboardType="email-address"
                 onBlur={onBlur}
@@ -128,7 +133,7 @@ export default function RegisterScreen() {
           />
 
           <Button 
-            title={isLoading ? "Signing Up..." : "Sign Up"} 
+            title={isLoading ? "Creating Account..." : "Sign Up"} 
             onPress={handleSubmit(handleRegister)} 
             style={styles.button}
             isDark={isDark}
@@ -136,29 +141,10 @@ export default function RegisterScreen() {
           />
         </View>
 
-        <View style={styles.socialSection}>
-          <View style={styles.divider}>
-            <View style={[styles.dividerLine, { backgroundColor: colors.border }]} />
-            <Text style={[styles.dividerText, { color: colors.textSecondary }]}>or continue with</Text>
-            <View style={[styles.dividerLine, { backgroundColor: colors.border }]} />
-          </View>
-          <View style={styles.socialButtons}>
-            <TouchableOpacity style={[styles.socialBtn, { borderColor: colors.border }]}>
-              <Ionicons name="logo-google" size={24} color={isDark ? '#FFF' : '#DB4437'} />
-            </TouchableOpacity>
-            <TouchableOpacity style={[styles.socialBtn, { borderColor: colors.border }]}>
-              <Ionicons name="logo-apple" size={24} color={colors.text} />
-            </TouchableOpacity>
-            <TouchableOpacity style={[styles.socialBtn, { borderColor: colors.border }]}>
-              <Ionicons name="finger-print" size={24} color={colors.primary} />
-            </TouchableOpacity>
-          </View>
-        </View>
-
         <View style={styles.footer}>
           <Text style={[styles.footerText, { color: colors.textSecondary }]}>Already have an account? </Text>
           <Link href="/(auth)/login" asChild>
-            <TouchableOpacity>
+            <TouchableOpacity hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
               <Text style={[styles.footerLink, { color: colors.primary }]}>Login</Text>
             </TouchableOpacity>
           </Link>
@@ -178,70 +164,45 @@ const styles = StyleSheet.create({
     paddingTop: theme.spacing.md,
   },
   header: {
-    marginBottom: theme.spacing.xxl,
+    marginBottom: theme.spacing.xl,
   },
   backButton: {
-    marginBottom: theme.spacing.lg,
+    marginBottom: theme.spacing.md,
     alignSelf: 'flex-start',
+    padding: 4,
   },
   title: {
     fontSize: 28,
     fontFamily: theme.typography.fontFamily.bold,
-    marginBottom: theme.spacing.sm,
+    marginBottom: theme.spacing.xs,
+    includeFontPadding: false,
   },
   subtitle: {
     fontSize: theme.typography.size.sm,
     fontFamily: theme.typography.fontFamily.medium,
+    includeFontPadding: false,
   },
   form: {
     marginBottom: theme.spacing.xl,
   },
   button: {
-    marginTop: theme.spacing.md,
-  },
-  socialSection: {
-    marginBottom: theme.spacing.xl,
-  },
-  divider: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: theme.spacing.xl,
-  },
-  dividerLine: {
-    flex: 1,
-    height: 1,
-  },
-  dividerText: {
-    marginHorizontal: theme.spacing.md,
-    fontSize: theme.typography.size.xs,
-    fontFamily: theme.typography.fontFamily.medium,
-  },
-  socialButtons: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    gap: theme.spacing.xl,
-  },
-  socialBtn: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    borderWidth: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+    marginTop: theme.spacing.lg,
   },
   footer: {
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
     marginTop: 'auto',
-    paddingVertical: theme.spacing.xl,
+    paddingVertical: theme.spacing.lg,
   },
   footerText: {
     fontSize: theme.typography.size.sm,
     fontFamily: theme.typography.fontFamily.medium,
+    includeFontPadding: false,
   },
   footerLink: {
     fontSize: theme.typography.size.sm,
     fontFamily: theme.typography.fontFamily.bold,
+    includeFontPadding: false,
   },
 });

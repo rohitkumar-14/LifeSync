@@ -7,12 +7,15 @@ import { Platform } from 'react-native';
 interface AppState {
   hasCompletedOnboarding: boolean;
   isAuthenticated: boolean;
+  userName: string;
+  userEmail: string;
   _hasHydrated: boolean;
   themePreference: 'light' | 'dark' | 'system';
   accentColor: string;
   isBiometricEnabled: boolean;
   setHasCompletedOnboarding: (val: boolean) => void;
   setIsAuthenticated: (val: boolean) => void;
+  setUserInfo: (name: string, email: string) => void;
   setHasHydrated: (val: boolean) => void;
   setThemePreference: (theme: 'light' | 'dark' | 'system') => void;
   setAccentColor: (color: string) => void;
@@ -25,9 +28,11 @@ export const useAppStore = create<AppState>()(
     (set) => ({
       hasCompletedOnboarding: false,
       isAuthenticated: false,
+      userName: '',
+      userEmail: '',
       _hasHydrated: false,
       themePreference: 'system',
-      accentColor: '#007AFF', // Default Blue
+      accentColor: '#4F46E5', // Indigo
       isBiometricEnabled: false,
       setHasCompletedOnboarding: (val) => set({ hasCompletedOnboarding: val }),
       setIsAuthenticated: (val) => {
@@ -40,6 +45,7 @@ export const useAppStore = create<AppState>()(
         }
         set({ isAuthenticated: val });
       },
+      setUserInfo: (name, email) => set({ userName: name, userEmail: email }),
       setHasHydrated: (val) => set({ _hasHydrated: val }),
       setThemePreference: (theme) => set({ themePreference: theme }),
       setAccentColor: (color) => set({ accentColor: color }),

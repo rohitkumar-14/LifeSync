@@ -14,13 +14,17 @@ export function NetworkBanner() {
   useEffect(() => {
     // Check initial state
     const checkNetwork = async () => {
-      const state = await Network.getNetworkStateAsync();
-      setIsOffline(!state.isConnected || !state.isInternetReachable);
+      try {
+        const state = await Network.getNetworkStateAsync();
+        if (state) {
+          setIsOffline(!state.isConnected || !state.isInternetReachable);
+        }
+      } catch (e) {
+        // Fallback gracefully if network module permissions/state isn't ready
+      }
     };
     checkNetwork();
 
-    // In a real app we might poll this or use @react-native-community/netinfo which has an event listener.
-    // Since we only have expo-network, we'll set up a simple polling interval just for this mock offline behavior
     const interval = setInterval(checkNetwork, 5000);
     return () => clearInterval(interval);
   }, []);

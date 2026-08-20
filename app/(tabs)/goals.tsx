@@ -19,25 +19,32 @@ export default function GoalsScreen() {
 
   const getGoalIcon = (name: string) => {
     if (name.toLowerCase().includes('macbook')) return { icon: '💻', bg: 'rgba(79, 70, 229, 0.1)', color: '#4F46E5' };
-    if (name.toLowerCase().includes('trip')) return { icon: '✈️', bg: 'rgba(59, 130, 246, 0.1)', color: '#3B82F6' };
-    if (name.toLowerCase().includes('fund')) return { icon: '🏥', bg: 'rgba(16, 185, 129, 0.1)', color: '#10B981' };
+    if (name.toLowerCase().includes('trip') || name.toLowerCase().includes('vacation')) return { icon: '✈️', bg: 'rgba(59, 130, 246, 0.1)', color: '#3B82F6' };
+    if (name.toLowerCase().includes('emergency') || name.toLowerCase().includes('fund')) return { icon: '🏥', bg: 'rgba(16, 185, 129, 0.1)', color: '#10B981' };
+    if (name.toLowerCase().includes('car') || name.toLowerCase().includes('bike')) return { icon: '🚗', bg: 'rgba(245, 158, 11, 0.1)', color: '#F59E0B' };
     return { icon: '🎯', bg: 'rgba(139, 92, 246, 0.1)', color: '#8B5CF6' };
   };
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={['top']}>
+      {/* Header with Top-Right Add Goal Button */}
       <View style={styles.header}>
         <Text style={[styles.title, { color: colors.text }]}>Goals</Text>
+        <TouchableOpacity 
+          onPress={() => router.push('/(modals)/add-goal')} 
+          style={[styles.headerAddBtn, { backgroundColor: colors.primary }]}
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+        >
+          <Ionicons name="add" size={22} color="#FFF" />
+        </TouchableOpacity>
       </View>
 
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-        <Text style={[styles.sectionTitle, { color: colors.text }]}>Goals</Text>
-        
         {goals.length === 0 ? (
           <EmptyState
-            icon="flag"
+            icon="flag-outline"
             title="No goals yet"
-            description="Aim high! Tap the + button to set your first financial goal."
+            description="Tap the + button in the top right to set your first financial goal."
           />
         ) : (
           goals.map((goal, index) => {
@@ -45,18 +52,16 @@ export default function GoalsScreen() {
               .filter((c) => c.goalId === goal.id)
               .reduce((sum, c) => sum + c.amount, 0);
             
-            // Mock display data
-            const displayAmount = currentAmount > 0 ? currentAmount : goal.target * (Math.random() * 0.8 + 0.1); 
-            const progress = displayAmount / goal.target;
-            const progressPercent = Math.min(Math.round(progress * 1000) / 10, 100);
+            const progress = goal.target > 0 ? currentAmount / goal.target : 0;
+            const progressPercent = Math.min(Math.round(progress * 100), 100);
             const ui = getGoalIcon(goal.name);
 
             return (
               <Animated.View
                 key={goal.id}
-                entering={FadeInUp.delay(index * 100).springify().damping(14)}
+                entering={FadeInUp.delay(index * 80).springify().damping(14)}
                 layout={Layout.springify()}
-                style={{ marginBottom: theme.spacing.lg }}
+                style={{ marginBottom: theme.spacing.md }}
               >
                 <SwipeableRow 
                   onDelete={() => deleteGoal(goal.id)} 
@@ -65,25 +70,29 @@ export default function GoalsScreen() {
                 >
                   <TouchableOpacity 
                     style={[styles.goalCard, { backgroundColor: colors.surface }]}
-                    onPress={() => router.push(`/goal/${goal.id}`)}
-                    activeOpacity={0.9}
+                    onPress={() => router.push({ pathname: '/(modals)/add-contribution', params: { goalId: goal.id, goalName: goal.name } })}
+                    activeOpacity={0.85}
                   >
                     <View style={styles.cardHeader}>
                       <View style={[styles.iconBox, { backgroundColor: ui.bg }]}>
-                        <Text style={{ fontSize: 24 }}>{ui.icon}</Text>
+                        <Text style={{ fontSize: 26 }}>{goal.icon || ui.icon}</Text>
                       </View>
                       <View style={styles.goalInfo}>
                         <Text style={[styles.goalName, { color: colors.text }]}>{goal.name}</Text>
                         <Text style={[styles.goalAmount, { color: colors.textSecondary }]}>
-                          <Text style={{ color: colors.textTertiary }}>₹{displayAmount.toLocaleString()} / </Text> 
-                          ₹{goal.target.toLocaleString()}
+                          <Text style={{ color: colors.primary, fontFamily: theme.typography.fontFamily.bold }}>₹{currentAmount.toLocaleString()}</Text>
+                          {' / '}₹{goal.target.toLocaleString()}
                         </Text>
+                      </View>
+                      <View style={styles.addFundsBadge}>
+                        <Ionicons name="add-circle-outline" size={18} color={colors.primary} />
+                        <Text style={[styles.addFundsText, { color: colors.primary }]}>Funds</Text>
                       </View>
                     </View>
 
                     <View style={styles.progressContainer}>
                       <View style={[styles.progressBarBg, { backgroundColor: colors.border }]}>
-                        <View style={[styles.progressBarFill, { width: `${progressPercent}%`, backgroundColor: '#4F46E5' }]} />
+                        <View style={[styles.progressBarFill, { width: `${progressPercent}%`, backgroundColor: colors.primary }]} />
                       </View>
                       <Text style={[styles.percentText, { color: colors.textSecondary }]}>{progressPercent}%</Text>
                     </View>
@@ -94,36 +103,40 @@ export default function GoalsScreen() {
           })
         )}
       </ScrollView>
-
-      {/* Floating Action Button */}
-      <TouchableOpacity 
-        style={[styles.fab, { backgroundColor: '#4F46E5' }]} 
-        onPress={() => router.push('/(modals)/add-goal')}
-      >
-        <Ionicons name="add" size={32} color="#FFF" />
-      </TouchableOpacity>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1 },
+  container: { 
+    flex: 1 
+  },
   header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     paddingHorizontal: theme.spacing.lg,
     paddingVertical: theme.spacing.md,
   },
   title: {
     fontSize: 28,
     fontFamily: theme.typography.fontFamily.bold,
+    includeFontPadding: false,
+  },
+  headerAddBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 3,
   },
   scrollContent: {
     padding: theme.spacing.lg,
-    paddingBottom: 120, // leave space for FAB
-  },
-  sectionTitle: {
-    fontSize: 16,
-    fontFamily: theme.typography.fontFamily.semiBold,
-    marginBottom: theme.spacing.lg,
+    paddingBottom: 100,
   },
   goalCard: {
     borderRadius: theme.radius.xl,
@@ -132,12 +145,12 @@ const styles = StyleSheet.create({
   cardHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: theme.spacing.lg,
+    marginBottom: theme.spacing.md,
   },
   iconBox: {
-    width: 56,
-    height: 56,
-    borderRadius: 16,
+    width: 50,
+    height: 50,
+    borderRadius: 14,
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: theme.spacing.md,
@@ -146,13 +159,29 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   goalName: {
-    fontSize: theme.typography.size.lg,
+    fontSize: theme.typography.size.md,
     fontFamily: theme.typography.fontFamily.bold,
     marginBottom: 4,
+    includeFontPadding: false,
   },
   goalAmount: {
     fontSize: theme.typography.size.sm,
     fontFamily: theme.typography.fontFamily.medium,
+    includeFontPadding: false,
+  },
+  addFundsBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+    backgroundColor: 'rgba(79, 70, 229, 0.08)',
+    gap: 4,
+  },
+  addFundsText: {
+    fontSize: 12,
+    fontFamily: theme.typography.fontFamily.semiBold,
+    includeFontPadding: false,
   },
   progressContainer: {
     flexDirection: 'row',
@@ -171,22 +200,8 @@ const styles = StyleSheet.create({
     borderRadius: 3,
   },
   percentText: {
-    fontSize: theme.typography.size.sm,
+    fontSize: theme.typography.size.xs,
     fontFamily: theme.typography.fontFamily.bold,
-  },
-  fab: {
-    position: 'absolute',
-    bottom: 100,
-    alignSelf: 'center',
-    width: 64,
-    height: 64,
-    borderRadius: 32,
-    justifyContent: 'center',
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 8,
+    includeFontPadding: false,
   },
 });

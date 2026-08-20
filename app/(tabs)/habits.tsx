@@ -22,37 +22,44 @@ export default function HabitsScreen() {
 
   const todayStr = new Date().toISOString().split('T')[0];
 
-  // Derive streaks
   const getStreak = (habitId: string) => {
-    const habitCompletions = completions.filter(c => c.habitId === habitId && c.completed).map(c => c.date).sort().reverse();
     let currentStreak = 0;
+    const habitCompletions = completions
+      .filter((c) => c.habitId === habitId && c.completed)
+      .map((c) => c.date);
+
     let checkDate = new Date();
-    
-    // Simple streak calculation for mock UI purposes
-    for (let i = 0; i < 30; i++) { // look back 30 days
-      const dStr = checkDate.toISOString().split('T')[0];
-      if (habitCompletions.includes(dStr)) {
+    while (true) {
+      const dateString = checkDate.toISOString().split('T')[0];
+      if (habitCompletions.includes(dateString)) {
         currentStreak++;
-      } else if (i !== 0) { // allow missing today
+        checkDate.setDate(checkDate.getDate() - 1);
+      } else {
         break;
       }
-      checkDate.setDate(checkDate.getDate() - 1);
     }
-    // Hardcode some mock values for display if no real streak exists
-    return currentStreak > 0 ? currentStreak : Math.floor(Math.random() * 30) + 1;
+    return currentStreak;
   };
 
   const filteredHabits = habits.filter(habit => {
     const isCompletedToday = completions.some(c => c.habitId === habit.id && c.date === todayStr && c.completed);
     if (activeTab === 'Completed') return isCompletedToday;
-    if (activeTab === 'Today') return !isCompletedToday; // Just showing remaining for 'Today' as an example
-    return true; // 'All'
+    if (activeTab === 'Today') return !isCompletedToday;
+    return true;
   });
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={['top']}>
+      {/* Header with Top-Right Add Habit Button */}
       <View style={styles.header}>
         <Text style={[styles.title, { color: colors.text }]}>Habits</Text>
+        <TouchableOpacity 
+          onPress={() => router.push('/(modals)/add-habit')} 
+          style={[styles.headerAddBtn, { backgroundColor: colors.primary }]}
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+        >
+          <Ionicons name="add" size={22} color="#FFF" />
+        </TouchableOpacity>
       </View>
 
       {/* Tabs */}
@@ -72,19 +79,22 @@ export default function HabitsScreen() {
         <View style={[styles.cardGroup, { backgroundColor: colors.surface }]}>
           {filteredHabits.length === 0 ? (
             <EmptyState
-              icon="leaf"
+              icon="leaf-outline"
               title={`No ${activeTab.toLowerCase()} habits`}
-              description="Tap the + button to build a healthy routine."
+              description="Tap the + button in the top right to start tracking a habit."
             />
           ) : (
             filteredHabits.map((habit, index) => {
+              const isCompletedToday = completions.some(
+                (c) => c.habitId === habit.id && c.date === todayStr && c.completed
+              );
               const streak = getStreak(habit.id);
               const isLast = index === filteredHabits.length - 1;
 
               return (
                 <Animated.View 
                   key={habit.id} 
-                  entering={FadeInUp.delay(index * 100).springify().damping(14)}
+                  entering={FadeInUp.delay(index * 80).springify().damping(14)}
                   layout={Layout.springify()}
                 >
                   <SwipeableRow 
@@ -95,19 +105,32 @@ export default function HabitsScreen() {
                     <TouchableOpacity
                       activeOpacity={0.8}
                       style={[styles.habitRow, !isLast && { borderBottomWidth: 1, borderBottomColor: colors.border }]}
-                      onPress={() => router.push(`/habit/${habit.id}`)}
+                      onPress={() => toggleHabitCompletion(habit.id, todayStr)}
                     >
-                      <View style={[styles.iconContainer, { backgroundColor: (habit.color || colors.primary) + '20' }]}>
-                        <Ionicons name={(habit.icon as any) || 'leaf'} size={24} color={habit.color || colors.primary} />
+                      <View style={[styles.iconContainer, { backgroundColor: habit.color + '20' }]}>
+                        <Text style={{ fontSize: 24 }}>{habit.icon}</Text>
                       </View>
+                      
                       <View style={styles.habitInfo}>
                         <Text style={[styles.habitName, { color: colors.text }]}>{habit.name}</Text>
                         <View style={styles.streakContainer}>
-                          <Text style={{ fontSize: 12 }}>🔥</Text>
-                          <Text style={[styles.streakText, { color: '#F59E0B' }]}>{streak} day streak</Text>
+                          <Ionicons name="flame" size={14} color="#F59E0B" />
+                          <Text style={[styles.streakText, { color: colors.textSecondary }]}>
+                            {streak} {streak === 1 ? 'day' : 'days'} streak
+                          </Text>
                         </View>
                       </View>
-                      <Ionicons name="chevron-forward" size={20} color={colors.textSecondary} />
+                      
+                      <TouchableOpacity 
+                        style={[
+                          styles.checkBtn, 
+                          { borderColor: isCompletedToday ? habit.color : colors.border },
+                          isCompletedToday && { backgroundColor: habit.color }
+                        ]}
+                        onPress={() => toggleHabitCompletion(habit.id, todayStr)}
+                      >
+                        {isCompletedToday && <Ionicons name="checkmark" size={16} color="#FFF" />}
+                      </TouchableOpacity>
                     </TouchableOpacity>
                   </SwipeableRow>
                 </Animated.View>
@@ -117,14 +140,6 @@ export default function HabitsScreen() {
         </View>
 
       </ScrollView>
-
-      {/* Floating Action Button */}
-      <TouchableOpacity 
-        style={[styles.fab, { backgroundColor: '#4F46E5' }]} 
-        onPress={() => router.push('/(modals)/add-habit')}
-      >
-        <Ionicons name="add" size={32} color="#FFF" />
-      </TouchableOpacity>
     </SafeAreaView>
   );
 }
@@ -134,12 +149,27 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     paddingHorizontal: theme.spacing.lg,
     paddingVertical: theme.spacing.md,
   },
   title: {
     fontSize: 28,
     fontFamily: theme.typography.fontFamily.bold,
+    includeFontPadding: false,
+  },
+  headerAddBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 3,
   },
   tabsContainer: {
     flexDirection: 'row',
@@ -155,6 +185,7 @@ const styles = StyleSheet.create({
   tabText: {
     fontSize: theme.typography.size.sm,
     fontFamily: theme.typography.fontFamily.semiBold,
+    includeFontPadding: false,
   },
   activeIndicator: {
     position: 'absolute',
@@ -166,7 +197,7 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     padding: theme.spacing.lg,
-    paddingBottom: theme.spacing.xxxl,
+    paddingBottom: 100,
   },
   cardGroup: {
     borderRadius: theme.radius.xl,
@@ -179,9 +210,9 @@ const styles = StyleSheet.create({
     paddingVertical: theme.spacing.lg,
   },
   iconContainer: {
-    width: 48,
-    height: 48,
-    borderRadius: 16,
+    width: 46,
+    height: 46,
+    borderRadius: 14,
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: theme.spacing.md,
@@ -194,6 +225,7 @@ const styles = StyleSheet.create({
     fontSize: theme.typography.size.md,
     fontFamily: theme.typography.fontFamily.bold,
     marginBottom: 4,
+    includeFontPadding: false,
   },
   streakContainer: {
     flexDirection: 'row',
@@ -203,20 +235,14 @@ const styles = StyleSheet.create({
   streakText: {
     fontSize: theme.typography.size.xs,
     fontFamily: theme.typography.fontFamily.medium,
+    includeFontPadding: false,
   },
-  fab: {
-    position: 'absolute',
-    bottom: 100,
-    alignSelf: 'center',
-    width: 64,
-    height: 64,
-    borderRadius: 32,
+  checkBtn: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    borderWidth: 2,
     justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: '#4F46E5',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 8,
-  }
+  },
 });

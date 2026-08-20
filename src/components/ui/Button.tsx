@@ -119,22 +119,23 @@ const styles = StyleSheet.create({
   },
   smContainer: {
     paddingVertical: theme.spacing.xs,
-    paddingHorizontal: theme.spacing.sm,
-    minHeight: 32,
+    paddingHorizontal: theme.spacing.md,
+    minHeight: 36,
   },
   mdContainer: {
-    paddingVertical: theme.spacing.sm,
-    paddingHorizontal: theme.spacing.md,
-    minHeight: 48,
+    paddingVertical: 14,
+    paddingHorizontal: theme.spacing.xl,
+    minHeight: 52,
   },
   lgContainer: {
-    paddingVertical: theme.spacing.md,
-    paddingHorizontal: theme.spacing.lg,
-    minHeight: 56,
+    paddingVertical: 16,
+    paddingHorizontal: theme.spacing.xl,
+    minHeight: 58,
   },
   text: {
     fontFamily: theme.typography.fontFamily.semiBold,
     textAlign: 'center',
+    includeFontPadding: false,
   },
   smText: {
     fontSize: theme.typography.size.sm,

@@ -137,7 +137,7 @@ export default function CalendarScreen() {
                   <Text style={[styles.expenseCategory, { color: colors.text }]}>{expense.category}</Text>
                   {expense.note ? <Text style={[styles.expenseNote, { color: colors.textSecondary }]}>{expense.note}</Text> : null}
                 </View>
-                <Text style={[styles.expenseAmount, { color: colors.text }]}>${expense.amount.toFixed(2)}</Text>
+                <Text style={[styles.expenseAmount, { color: colors.text }]}>₹{expense.amount.toLocaleString()}</Text>
               </View>
             ))
           )}

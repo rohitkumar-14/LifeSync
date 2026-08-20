@@ -35,7 +35,15 @@ const resources = {
   }
 };
 
-const deviceLanguage = getLocales()[0]?.languageCode || 'en';
+let deviceLanguage = 'en';
+try {
+  const locales = getLocales();
+  if (locales && locales.length > 0 && locales[0]?.languageCode) {
+    deviceLanguage = locales[0].languageCode;
+  }
+} catch (e) {
+  deviceLanguage = 'en';
+}
 
 i18n
   .use(initReactI18next)

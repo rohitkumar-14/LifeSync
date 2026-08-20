@@ -25,13 +25,14 @@ export default function TasksScreen() {
   const filteredTasks = tasks.filter(task => {
     const taskDate = task.dueDate ? new Date(task.dueDate).toISOString().split('T')[0] : todayStr;
     if (activeTab === 'Completed') return task.completed;
-    if (activeTab === 'Today') return !task.completed && taskDate === todayStr;
+    if (activeTab === 'Today') return !task.completed && taskDate <= todayStr;
     if (activeTab === 'Upcoming') return !task.completed && taskDate > todayStr;
     return true;
   });
 
-  const getPriorityStyle = (priority: string) => {
-    switch (priority.toLowerCase()) {
+  const getPriorityStyle = (priority?: string) => {
+    switch ((priority || '').toLowerCase()) {
+      case 'urgent': return { color: '#8B5CF6' };
       case 'high': return { color: '#EF4444' };
       case 'medium': return { color: '#F59E0B' };
       case 'low': return { color: '#10B981' };
@@ -46,17 +47,19 @@ export default function TasksScreen() {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={['top']}>
+      {/* Header with Top-Right Add Task Button */}
       <View style={styles.header}>
         <Text style={[styles.title, { color: colors.text }]}>Tasks</Text>
         <View style={styles.headerActions}>
-          <TouchableOpacity onPress={() => router.push('/agenda')} style={styles.iconBtn}>
-            <Ionicons name="calendar-outline" size={24} color={colors.text} />
+          <TouchableOpacity 
+            onPress={() => router.push('/(modals)/add-task')} 
+            style={[styles.headerAddBtn, { backgroundColor: colors.primary }]}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          >
+            <Ionicons name="add" size={22} color="#FFF" />
           </TouchableOpacity>
-          <TouchableOpacity onPress={() => router.push('/profile')} style={styles.profileBtn}>
-            <Image 
-              source={{ uri: 'https://i.pravatar.cc/100?img=11' }} 
-              style={styles.avatar} 
-            />
+          <TouchableOpacity onPress={() => router.push('/agenda')} style={styles.iconBtn}>
+            <Ionicons name="calendar-outline" size={22} color={colors.text} />
           </TouchableOpacity>
         </View>
       </View>
@@ -65,10 +68,10 @@ export default function TasksScreen() {
       <View style={styles.tabsContainer}>
         {(['Today', 'Upcoming', 'Completed'] as Tab[]).map(tab => (
           <TouchableOpacity key={tab} style={styles.tab} onPress={() => setActiveTab(tab)}>
-            <Text style={[styles.tabText, { color: activeTab === tab ? '#4F46E5' : colors.textSecondary }]}>
+            <Text style={[styles.tabText, { color: activeTab === tab ? colors.primary : colors.textSecondary }]}>
               {tab}
             </Text>
-            {activeTab === tab && <View style={[styles.activeIndicator, { backgroundColor: '#4F46E5' }]} />}
+            {activeTab === tab && <View style={[styles.activeIndicator, { backgroundColor: colors.primary }]} />}
           </TouchableOpacity>
         ))}
       </View>
@@ -80,7 +83,7 @@ export default function TasksScreen() {
             <EmptyState
               icon="checkmark-circle-outline"
               title={`No ${activeTab.toLowerCase()} tasks`}
-              description="You're all caught up! Enjoy your day."
+              description="Tap the + button in the top right to create a new task."
             />
           ) : (
             filteredTasks.map((task, index) => {
@@ -90,7 +93,7 @@ export default function TasksScreen() {
               return (
                 <Animated.View 
                   key={task.id} 
-                  entering={FadeInUp.delay(index * 100).springify().damping(14)}
+                  entering={FadeInUp.delay(index * 80).springify().damping(14)}
                   layout={Layout.springify()}
                 >
                   <SwipeableRow 
@@ -103,7 +106,7 @@ export default function TasksScreen() {
                       style={[styles.taskRow, !isLast && { borderBottomWidth: 1, borderBottomColor: colors.border }]}
                       onPress={() => toggleTaskCompletion(task.id)}
                     >
-                      <View style={[styles.dot, { backgroundColor: '#4F46E5' }]} />
+                      <View style={[styles.dot, { backgroundColor: task.completed ? colors.textTertiary : colors.primary }]} />
                       
                       <View style={styles.taskInfo}>
                         <Text style={[
@@ -132,14 +135,6 @@ export default function TasksScreen() {
         </View>
 
       </ScrollView>
-
-      {/* Floating Action Button */}
-      <TouchableOpacity 
-        style={[styles.fab, { backgroundColor: '#4F46E5' }]} 
-        onPress={() => router.push('/(modals)/add-task')}
-      >
-        <Ionicons name="add" size={32} color="#FFF" />
-      </TouchableOpacity>
     </SafeAreaView>
   );
 }
@@ -158,25 +153,26 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 28,
     fontFamily: theme.typography.fontFamily.bold,
+    includeFontPadding: false,
   },
   headerActions: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: theme.spacing.sm,
   },
+  headerAddBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 3,
+  },
   iconBtn: {
     padding: theme.spacing.xs,
-  },
-  profileBtn: {
-    padding: 2,
-    borderWidth: 2,
-    borderColor: 'transparent',
-    borderRadius: 20,
-  },
-  avatar: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
   },
   tabsContainer: {
     flexDirection: 'row',
@@ -192,6 +188,7 @@ const styles = StyleSheet.create({
   tabText: {
     fontSize: theme.typography.size.sm,
     fontFamily: theme.typography.fontFamily.semiBold,
+    includeFontPadding: false,
   },
   activeIndicator: {
     position: 'absolute',
@@ -203,7 +200,7 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     padding: theme.spacing.lg,
-    paddingBottom: 120, // leave space for bottom tab bar
+    paddingBottom: 100,
   },
   cardGroup: {
     borderRadius: theme.radius.xl,
@@ -229,6 +226,7 @@ const styles = StyleSheet.create({
   taskName: {
     fontSize: theme.typography.size.md,
     fontFamily: theme.typography.fontFamily.bold,
+    includeFontPadding: false,
   },
   taskMeta: {
     flexDirection: 'row',
@@ -238,24 +236,11 @@ const styles = StyleSheet.create({
   priorityText: {
     fontSize: theme.typography.size.sm,
     fontFamily: theme.typography.fontFamily.bold,
+    includeFontPadding: false,
   },
   timeText: {
     fontSize: theme.typography.size.sm,
     fontFamily: theme.typography.fontFamily.medium,
-  },
-  fab: {
-    position: 'absolute',
-    bottom: 100,
-    alignSelf: 'center',
-    width: 64,
-    height: 64,
-    borderRadius: 32,
-    justifyContent: 'center',
-    alignItems: 'center',
-    shadowColor: '#4F46E5',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 8,
+    includeFontPadding: false,
   },
 });
